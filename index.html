@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cosmos Simulator Aurelia</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #0e0e14;
+            font-family: Arial, sans-serif;
+            color: #d0d0d8;
+            touch-action: none;
+        }
+        #ui {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 270px;
+            background: rgba(22, 22, 32, 0.9);
+            border: 1px solid #3a3a4e;
+            border-radius: 6px;
+            padding: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            box-sizing: border-box;
+            pointer-events: auto;
+            z-index: 10;
+        }
+        h3, h4 {
+            margin: 0 0 6px 0;
+            font-size: 13px;
+            color: #d4b26a;
+            border-bottom: 1px solid #3a3a4e;
+            padding-bottom: 4px;
+        }
+        .control-group {
+            margin-bottom: 5px;
+        }
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #a0a0b0;
+            margin-bottom: 2px;
+        }
+        .control-label span:last-child {
+            color: #d4b26a;
+            font-weight: bold;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            margin: 0;
+            background: #222230;
+            accent-color: #b8974a;
+        }
+        #global-time-panel {
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #3a3a4e;
+        }
+        #instructions {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            background: rgba(18, 18, 26, 0.8);
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            max-width: 260px;
+            border: 1px solid #333342;
+            pointer-events: none;
+        }
+        #search-btn {
+            position: absolute;
+            bottom: 80px;
+            left: 8px;
+            background: rgba(22, 22, 32, 0.9);
+            border: 1px solid #3a3a4e;
+            border-radius: 6px;
+            color: #d0d0d8;
+            padding: 6px 10px;
+            font-size: 11px;
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        #search-btn:hover {
+            background: rgba(35, 35, 50, 0.9);
+            color: #d4b26a;
+        }
+        #search-menu {
+            position: absolute;
+            bottom: 115px;
+            left: 8px;
+            width: 210px;
+            max-height: 250px;
+            overflow-y: auto;
+            background: rgba(22, 22, 32, 0.95);
+            border: 1px solid #3a3a4e;
+            border-radius: 6px;
+            padding: 6px;
+            display: none;
+            z-index: 11;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        #search-menu div {
+            padding: 5px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 4px;
+            color: #d0d0d8;
+        }
+        #search-menu div:hover {
+            background: rgba(58, 58, 78, 0.6);
+            color: #d4b26a;
+        }
+        select {
+            width: 100%;
+            background: #222230;
+            color: #d0d0d8;
+            border: 1px solid #3a3a4e;
+            border-radius: 4px;
+            padding: 5px;
+            font-size: 11px;
+            cursor: pointer;
+            outline: none;
+        }
+        select:hover {
+            border-color: #b8974a;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+<button id="search-btn">?? Search</button>
+<div id="search-menu">
+    <div data-target="star">Star: Aurelia</div>
+    <div data-target="planet-0">Planet: Nyx</div>
+    <div data-target="planet-1">Planet: Iris</div>
+    <div data-target="planet-2">Planet: Isis</div>
+    <div data-target="planet-3">Planet: Gorima</div>
+    <div data-target="planet-4">Gas Giant: Omir</div>
+    <div data-target="moon-0">Moon: Orisida</div>
+    <div data-target="moon-1">Moon: Olidia</div>
+    <div data-target="moon-2">Moon: Smiro</div>
+</div>
+
+<div id="ui">
+    <h3>Control Panel (v1.0)</h3>
+    <div id="global-time-panel">
+        <div class="control-label" style="margin-bottom: 4px;"><span>Time Scale:</span></div>
+        <select id="in-time-scale">
+            <option value="1">1 second / second</option>
+            <option value="60">1 minute / second</option>
+            <option value="86400">1 day / second</option>
+            <option value="604800">1 week / second</option>
+            <option value="2592000">1 month / second</option>
+            <option value="31557600">1 year / second</option>
+            <option value="315576000">10 years / second</option>
+        </select>
+    </div>
+    <div id="selection-info" style="font-size: 11px; color: #a0a0b0;">Tap an object to configure. Click empty space to reset.</div>
+    <div id="controls" style="display: none;"></div>
+</div>
+
+<div id="instructions">
+    <b>Controls:</b> Rotate with one finger, pinch to zoom. Use two fingers (or right mouse button) to pan.
+</div>
+
+<script>
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e0e14);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100000);
+    camera.position.set(0, 350, 650);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.04;
+    controls.minPolarAngle = 0;       
+    controls.maxPolarAngle = Math.PI; 
+    controls.minDistance = 5;
+    controls.maxDistance = 50000;
+
+    let timeScale = 1.0;
+
+    const ambientLight = new THREE.AmbientLight(0x353545, 1.5);
+    scene.add(ambientLight);
+
+    const pointLight = new THREE.PointLight(0xccb899, 2, 5000);
+    scene.add(pointLight);
+
+    const KM_PER_AU = 149597870;
+
+    const starData = {
+        name: 'Aurelia Star',
+        type: 'star',
+        diameter: 1392100,
+        mass: 1.0,
+        color: 0xc49b4b
+    };
+
+    const planetsData = [
+        {
+            name: 'Planet Nyx',
+            type: 'planet',
+            index: 0,
+            diameter: 12756,
+            mass: 1.0,
+            distanceKm: KM_PER_AU,
+            eccentricity: 0.1,
+            inclination: 0,
+            periapsis: 0,
+            angle: 0,
+            color: 0x5b7582
+        },
+        {
+            name: 'Planet Iris',
+            type: 'planet',
+            index: 1,
+            diameter: 12937,
+            mass: 1.2,
+            distanceKm: 1.63 * KM_PER_AU,
+            eccentricity: 0.021,
+            inclination: 1.0,
+            periapsis: 210.0,
+            angle: Math.PI * 0.7,
+            color: 0x768270
+        },
+        {
+            name: 'Planet Isis',
+            type: 'planet',
+            index: 2,
+            diameter: 970,
+            mass: 0.0072,
+            distanceKm: 2.73 * KM_PER_AU,
+            eccentricity: 0.08384,
+            inclination: 27.0,
+            periapsis: 319.21,
+            angle: Math.PI * 1.4,
+            color: 0x6e6578
+        },
+        {
+            name: 'Planet Gorima',
+            type: 'planet',
+            index: 3,
+            diameter: 1274,
+            mass: 0.0097,
+            distanceKm: 2.37 * KM_PER_AU,
+            eccentricity: 0.0873,
+            inclination: 12.0,
+            periapsis: 238.0,
+            angle: Math.PI * 0.2,
+            color: 0x787265
+        },
+        {
+            name: 'Gas Giant Omir',
+            type: 'planet',
+            index: 4,
+            diameter: 21700,
+            mass: 3.4,
+            distanceKm: 4.88 * KM_PER_AU,
+            eccentricity: 0.03,
+            inclination: 57.0,
+            periapsis: 177.0,
+            angle: Math.PI * 1.1,
+            color: 0xd4a373
+        }
+    ];
+
+    const moonsData = [
+        {
+            name: 'Moon Orisida',
+            type: 'moon',
+            index: 0,
+            parentIndex: 2,
+            diameter: 210,
+            mass: 0.0018,
+            distanceKm: 12000,
+            eccentricity: 0.02,
+            inclination: 27.0,
+            periapsis: 100.0,
+            angle: 0,
+            color: 0x8a8594
+        },
+        {
+            name: 'Moon Olidia',
+            type: 'moon',
+            index: 1,
+            parentIndex: 2,
+            diameter: 100,
+            mass: 0.0007,
+            distanceKm: 2000,
+            eccentricity: 0.01,
+            inclination: 27.0,
+            periapsis: 2.0,
+            angle: Math.PI,
+            color: 0x9c95a8
+        },
+        {
+            name: 'Moon Smiro',
+            type: 'moon',
+            index: 2,
+            parentIndex: 4,
+            diameter: 57,
+            mass: 1.3e12,
+            distanceKm: 75000,
+            eccentricity: 0.002,
+            inclination: 57.0,
+            periapsis: 122.0,
+            angle: Math.PI * 0.5,
+            color: 0xb0a8bc,
+            elongated: true
+        }
+    ];
+
+    function formatDistance(km) {
+        if (km <= 2000000) {
+            return Math.round(km).toLocaleString() + " km";
+        } else {
+            const au = km / KM_PER_AU;
+            return au.toFixed(3) + " AU";
+        }
+    }
+
+    function getStarVisualSize() { return 70; }
+    function getPlanetVisualSize(planet) {
+        const ratio = starData.diameter / planet.diameter;
+        return Math.max(2.5, getStarVisualSize() / ratio);
+    }
+    function getMoonVisualSize(moon) {
+        const ratio = starData.diameter / moon.diameter;
+        return Math.max(1.2, getStarVisualSize() / ratio * 0.8);
+    }
+    function getVisualDistance(planet) {
+        const au = planet.distanceKm / KM_PER_AU;
+        return Math.max(40, Math.min(800, au * 120));
+    }
+    function getMoonVisualDistance(moon) {
+        return Math.max(8, Math.min(50, moon.distanceKm / 2000));
+    }
+
+    const starGeo = new THREE.SphereGeometry(getStarVisualSize() / 2, 32, 32);
+    const starMat = new THREE.MeshBasicMaterial({ color: starData.color });
+    const starMesh = new THREE.Mesh(starGeo, starMat);
+    scene.add(starMesh);
+
+    const hitTestGeo = new THREE.SphereGeometry(8, 16, 16);
+    const hitTestMat = new THREE.MeshBasicMaterial({ visible: false });
+    const starHitBox = new THREE.Mesh(hitTestGeo, hitTestMat);
+    scene.add(starHitBox);
+
+    const planetMeshes = [];
+    const planetHitBoxes = [];
+    const orbitLines = [];
+
+    planetsData.forEach((planet, index) => {
+        const pGeo = new THREE.SphereGeometry(getPlanetVisualSize(planet) / 2, 32, 32);
+        const pMat = new THREE.MeshLambertMaterial({ color: planet.color });
+        const pMesh = new THREE.Mesh(pGeo, pMat);
+        scene.add(pMesh);
+        planetMeshes.push(pMesh);
+
+        const pHitBox = new THREE.Mesh(hitTestGeo, hitTestMat);
+        scene.add(pHitBox);
+        planetHitBoxes.push(pHitBox);
+
+        orbitLines.push(null);
+        updatePlanetOrbitGeometry(index);
+    });
+
+    const moonMeshes = [];
+    const moonHitBoxes = [];
+    const moonOrbitLines = [];
+
+    moonsData.forEach((moon, index) => {
+        const mGeo = new THREE.SphereGeometry(getMoonVisualSize(moon) / 2, 16, 16);
+        const mMat = new THREE.MeshLambertMaterial({ color: moon.color });
+        const mMesh = new THREE.Mesh(mGeo, mMat);
+        
+        if (moon.elongated) {
+            mMesh.scale.set(2.4, 0.8, 1.0);
+        }
+
+        scene.add(mMesh);
+        moonMeshes.push(mMesh);
+
+        const mHitBox = new THREE.Mesh(new THREE.SphereGeometry(5, 12, 12), hitTestMat);
+        scene.add(mHitBox);
+        moonHitBoxes.push(mHitBox);
+
+        moonOrbitLines.push(null);
+        updateMoonOrbitGeometry(index);
+    });
+
+    function updatePlanetOrbitGeometry(index) {
+        const planet = planetsData[index];
+        if (orbitLines[index]) scene.remove(orbitLines[index]);
+
+        const points = [];
+        const segments = 200;
+        const a = getVisualDistance(planet);
+        const e = planet.eccentricity;
+        const inc = planet.inclination * Math.PI / 180;
+        const omega = planet.periapsis * Math.PI / 180;
+
+        for (let i = 0; i <= segments; i++) {
+            const theta = (i / segments) * Math.PI * 2;
+            const r = (a * (1 - e * e)) / (1 + e * Math.cos(theta));
+            const x = r * Math.cos(theta + omega);
+            const z = r * Math.sin(theta + omega);
+            const y = z * Math.sin(inc);
+            const realZ = z * Math.cos(inc);
+            points.push(new THREE.Vector3(x, y, realZ));
+        }
+
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const material = new THREE.LineBasicMaterial({ color: 0x4a4a5e, transparent: true, opacity: 0.6 });
+        const line = new THREE.Line(geometry, material);
+        scene.add(line);
+        orbitLines[index] = line;
+    }
+
+    function updateMoonOrbitGeometry(index) {
+        const moon = moonsData[index];
+        if (moonOrbitLines[index]) scene.remove(moonOrbitLines[index]);
+
+        const points = [];
+        const segments = 100;
+        const a = getMoonVisualDistance(moon);
+        const e = moon.eccentricity;
+        const inc = moon.inclination * Math.PI / 180;
+        const omega = moon.periapsis * Math.PI / 180;
+
+        for (let i = 0; i <= segments; i++) {
+            const theta = (i / segments) * Math.PI * 2;
+            const r = (a * (1 - e * e)) / (1 + e * Math.cos(theta));
+            const x = r * Math.cos(theta + omega);
+            const z = r * Math.sin(theta + omega);
+            const y = z * Math.sin(inc);
+            const realZ = z * Math.cos(inc);
+            points.push(new THREE.Vector3(x, y, realZ));
+        }
+
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const material = new THREE.LineBasicMaterial({ color: 0x555566, transparent: true, opacity: 0.5 });
+        const line = new THREE.Line(geometry, material);
+        scene.add(line);
+        moonOrbitLines[index] = line;
+    }
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    let selectedObject = null;
+    let isLerpingTarget = false;
+    let lastTrackPos = new THREE.Vector3();
+
+    let pointerDownTime = 0;
+    let pointerDownPos = { x: 0, y: 0 };
+
+    window.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('#ui') || e.target.closest('#search-btn') || e.target.closest('#search-menu')) return;
+        pointerDownTime = Date.now();
+        pointerDownPos = { x: e.clientX, y: e.clientY };
+    });
+
+    window.addEventListener('pointerup', (e) => {
+        if (e.target.closest('#ui') || e.target.closest('#search-btn') || e.target.closest('#search-menu')) return;
+
+        const timeDiff = Date.now() - pointerDownTime;
+        const moveDist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+
+        if (timeDiff < 300 && moveDist < 8) {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects([starHitBox, ...planetHitBoxes, ...moonHitBoxes]);
+
+            if (intersects.length > 0) {
+                const hit = intersects[0].object;
+                if (hit === starHitBox) selectedObject = starData;
+                else {
+                    const pIndex = planetHitBoxes.indexOf(hit);
+                    const mIndex = moonHitBoxes.indexOf(hit);
+                    if (pIndex !== -1) selectedObject = planetsData[pIndex];
+                    else if (mIndex !== -1) selectedObject = moonsData[mIndex];
+                }
+                isLerpingTarget = true;
+                
+                if (selectedObject === starData) lastTrackPos.set(0, 0, 0);
+                else if (selectedObject.type === 'planet') lastTrackPos.copy(planetMeshes[selectedObject.index].position);
+                else if (selectedObject.type === 'moon') lastTrackPos.copy(moonMeshes[selectedObject.index].position);
+            } else {
+                selectedObject = null;
+                isLerpingTarget = false;
+            }
+            updateUI();
+        }
+    });
+
+    const searchBtn = document.getElementById('search-btn');
+    const searchMenu = document.getElementById('search-menu');
+
+    searchBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        searchMenu.style.display = searchMenu.style.display === 'block' ? 'none' : 'block';
+    });
+
+    window.addEventListener('click', (e) => {
+        if (!e.target.closest('#search-btn') && !e.target.closest('#search-menu')) {
+            searchMenu.style.display = 'none';
+        }
+    });
+
+    searchMenu.querySelectorAll('div').forEach(item => {
+        item.addEventListener('click', (e) => {
+            const target = e.target.getAttribute('data-target');
+            if (target === 'star') selectedObject = starData;
+            else if (target.startsWith('planet-')) selectedObject = planetsData[parseInt(target.split('-')[1])];
+            else if (target.startsWith('moon-')) selectedObject = moonsData[parseInt(target.split('-')[1])];
+            
+            isLerpingTarget = true;
+            if (selectedObject === starData) lastTrackPos.set(0, 0, 0);
+            else if (selectedObject.type === 'planet') lastTrackPos.copy(planetMeshes[selectedObject.index].position);
+            else if (selectedObject.type === 'moon') lastTrackPos.copy(moonMeshes[selectedObject.index].position);
+            
+            updateUI();
+            searchMenu.style.display = 'none';
+        });
+    });
+
+    document.getElementById('in-time-scale').addEventListener('change', (e) => {
+        timeScale = parseFloat(e.target.value);
+    });
+
+    const controlsDiv = document.getElementById('controls');
+    const selectionInfo = document.getElementById('selection-info');
+
+    function updateUI() {
+        if (!selectedObject) {
+            selectionInfo.style.display = 'block';
+            controlsDiv.style.display = 'none';
+            return;
+        }
+
+        selectionInfo.style.display = 'none';
+        controlsDiv.style.display = 'block';
+
+        let html = `<h4>${selectedObject.name}</h4>`;
+
+        if (selectedObject.type === 'star') {
+            html += `
+                <div class="control-group">
+                    <div class="control-label"><span>Diameter:</span><span id="val-star-diam">${starData.diameter.toLocaleString()} km</span></div>
+                    <input type="range" id="in-star-diam" min="500000" max="3000000" step="10000" value="${starData.diameter}">
+                </div>
+            `;
+        } else if (selectedObject.type === 'planet') {
+            const p = selectedObject;
+            html += `
+                <div class="control-group">
+                    <div class="control-label"><span>Diameter:</span><span id="val-pl-diam">${p.diameter.toLocaleString()} km</span></div>
+                    <input type="range" id="in-pl-diam" min="500" max="40000" step="50" value="${p.diameter}">
+                </div>
+                <div class="control-group">
+                    <div class="control-label"><span>Mass:</span><span id="val-pl-mass">${p.mass.toFixed(4)} EM</span></div>
+                    <input type="range" id="in-pl-mass" min="0.001" max="20.0" step="0.001" value="${p.mass}">
+                </div>
+                <div class="control-group">
+                    <div class="control-label"><span>Distance:</span><span id="val-pl-dist">${formatDistance(p.distanceKm)}</span></div>
+                    <input type="range" id="in-pl-dist" min="500000" max="900000000" step="100000" value="${p.distanceKm}">
+                </div>
+                <div class="control-group">
+                    <div class="control-label"><span>Eccentricity:</span><span id="val-pl-ecc">${p.eccentricity.toFixed(5)}</span></div>
+                    <input type="range" id="in-pl-ecc" min="0" max="0.8" step="0.0001" value="${p.eccentricity}">
+                </div>
+                <div class="control-group">
+                    <div class="control-label"><span>Inclination:</span><span id="val-pl-inc">${p.inclination}°</span></div>
+                    <input type="range" id="in-pl-inc" min="-90" max="90" step="0.1" value="${p.inclination}">
+                </div>
+                <div class="control-group">
+                    <div class="control-label"><span>Periapsis:</span><span id="val-pl-per">${p.periapsis}°</span></div>
+                    <input type="range" id="in-pl-per" min="0" max="360" step="0.01" value="${p.periapsis}">
+                </div>
+            `;
+        } else if (selectedObject.type === 'moon') {
+            const m = selectedObject;
+            html += `
+                <div class="control-group">
+                    <div class="control-label"><span>Diameter:</span><span id="val-moon-diam">${m.diameter.toLocaleString()} km</span></div>
+                    <input type="range" id="in-moon-diam" min="20" max="3000" step="5" value="${m.diameter}">
+                </div>
+                <div class="control-group">
+                    <div class="control-label"><span>Mass:</span><span>${typeof m.mass === 'number' && m.mass > 1e6 ? m.mass.toExponential(2) : m.mass + ' EM'}</span></div>
+                </div>
+                <div class="control-group">
+                    <div class="control-label"><span>Distance:</span><span>${formatDistance(m.distanceKm)}</span></div>
+                </div>
+            `;
+        }
+
+        controlsDiv.innerHTML = html;
+        bindInputs();
+    }
+
+    function bindInputs() {
+        if (selectedObject.type === 'star') {
+            document.getElementById('in-star-diam').addEventListener('input', (e) => {
+                starData.diameter = parseFloat(e.target.value);
+                document.getElementById('val-star-diam').innerText = starData.diameter.toLocaleString() + " km";
+                starMesh.geometry.dispose();
+                starMesh.geometry = new THREE.SphereGeometry(getStarVisualSize() / 2, 32, 32);
+            });
+        } else if (selectedObject.type === 'planet') {
+            const p = selectedObject;
+            document.getElementById('in-pl-diam').addEventListener('input', (e) => {
+                p.diameter = parseFloat(e.target.value);
+                document.getElementById('val-pl-diam').innerText = p.diameter.toLocaleString() + " km";
+                planetMeshes[p.index].geometry.dispose();
+                planetMeshes[p.index].geometry = new THREE.SphereGeometry(getPlanetVisualSize(p) / 2, 32, 32);
+            });
+            document.getElementById('in-pl-mass').addEventListener('input', (e) => {
+                p.mass = parseFloat(e.target.value);
+                document.getElementById('val-pl-mass').innerText = p.mass.toFixed(4) + " EM";
+            });
+            document.getElementById('in-pl-dist').addEventListener('input', (e) => {
+                p.distanceKm = parseFloat(e.target.value);
+                document.getElementById('val-pl-dist').innerText = formatDistance(p.distanceKm);
+                updatePlanetOrbitGeometry(p.index);
+            });
+            document.getElementById('in-pl-ecc').addEventListener('input', (e) => {
+                p.eccentricity = parseFloat(e.target.value);
+                document.getElementById('val-pl-ecc').innerText = p.eccentricity.toFixed(5);
+                updatePlanetOrbitGeometry(p.index);
+            });
+            document.getElementById('in-pl-inc').addEventListener('input', (e) => {
+                p.inclination = parseFloat(e.target.value);
+                document.getElementById('val-pl-inc').innerText = p.inclination + '°';
+                updatePlanetOrbitGeometry(p.index);
+            });
+            document.getElementById('in-pl-per').addEventListener('input', (e) => {
+                p.periapsis = parseFloat(e.target.value);
+                document.getElementById('val-pl-per').innerText = p.periapsis + '°';
+                updatePlanetOrbitGeometry(p.index);
+            });
+        } else if (selectedObject.type === 'moon') {
+            const m = selectedObject;
+            document.getElementById('in-moon-diam').addEventListener('input', (e) => {
+                m.diameter = parseFloat(e.target.value);
+                document.getElementById('val-moon-diam').innerText = m.diameter.toLocaleString() + " km";
+                moonMeshes[m.index].geometry.dispose();
+                moonMeshes[m.index].geometry = new THREE.SphereGeometry(getMoonVisualSize(m) / 2, 16, 16);
+            });
+        }
+    }
+
+    let lastTime = performance.now();
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        const now = performance.now();
+        const frameDelta = (now - lastTime) / 1000;
+        lastTime = now;
+        const dt = Math.min(frameDelta, 0.1);
+
+        planetsData.forEach((planet, index) => {
+            const visualDist = getVisualDistance(planet);
+            const orbitalSpeed = 0.015 * Math.sqrt(starData.mass / visualDist);
+            
+            const angleStep = orbitalSpeed * 0.05 * timeScale * dt * 60;
+            planet.angle += angleStep;
+            planet.angle = planet.angle % (Math.PI * 2);
+
+            const a = visualDist;
+            const e = planet.eccentricity;
+            const inc = planet.inclination * Math.PI / 180;
+            const omega = planet.periapsis * Math.PI / 180;
+            const theta = planet.angle;
+
+            const r = (a * (1 - e * e)) / (1 + e * Math.cos(theta));
+            const x = r * Math.cos(theta + omega);
+            const z = r * Math.sin(theta + omega);
+            const y = z * Math.sin(inc);
+            const realZ = z * Math.cos(inc);
+
+            planetMeshes[index].position.set(x, y, realZ);
+            planetHitBoxes[index].position.copy(planetMeshes[index].position);
+        });
+
+        moonsData.forEach((moon, index) => {
+            const parentPlanet = planetsData[moon.parentIndex];
+            const parentMesh = planetMeshes[moon.parentIndex];
+
+            const visualDist = getMoonVisualDistance(moon);
+            const orbitalSpeed = 0.04 * Math.sqrt(parentPlanet.mass / 1.0);
+            
+            const angleStep = orbitalSpeed * 0.05 * timeScale * dt * 60;
+            moon.angle += angleStep;
+            moon.angle = moon.angle % (Math.PI * 2);
+
+            const a = visualDist;
+            const e = moon.eccentricity;
+            const inc = moon.inclination * Math.PI / 180;
+            const omega = moon.periapsis * Math.PI / 180;
+            const theta = moon.angle;
+
+            const r = (a * (1 - e * e)) / (1 + e * Math.cos(theta));
+            const lx = r * Math.cos(theta + omega);
+            const lz = r * Math.sin(theta + omega);
+            const ly = lz * Math.sin(inc);
+            const realLz = lz * Math.cos(inc);
+
+            moonMeshes[index].position.set(
+                parentMesh.position.x + lx,
+                parentMesh.position.y + ly,
+                parentMesh.position.z + realLz
+            );
+            moonHitBoxes[index].position.copy(moonMeshes[index].position);
+
+            if (moonOrbitLines[index]) {
+                moonOrbitLines[index].position.copy(parentMesh.position);
+            }
+        });
+
+        const oldTarget = controls.target.clone();
+
+        let currentSelectedPos = new THREE.Vector3();
+        if (selectedObject) {
+            if (selectedObject === starData) currentSelectedPos.set(0, 0, 0);
+            else if (selectedObject.type === 'planet') currentSelectedPos.copy(planetMeshes[selectedObject.index].position);
+            else if (selectedObject.type === 'moon') currentSelectedPos.copy(moonMeshes[selectedObject.index].position);
+        }
+
+        if (selectedObject) {
+            if (isLerpingTarget) {
+                controls.target.lerp(currentSelectedPos, 0.1);
+                const tDelta = new THREE.Vector3().subVectors(controls.target, oldTarget);
+                camera.position.add(tDelta);
+                
+                if (controls.target.distanceTo(currentSelectedPos) < 1.0) {
+                    isLerpingTarget = false;
+                }
+            } else {
+                const movementDelta = new THREE.Vector3().subVectors(currentSelectedPos, lastTrackPos);
+                controls.target.add(movementDelta);
+                camera.position.add(movementDelta);
+            }
+            lastTrackPos.copy(currentSelectedPos);
+        }
+
+        controls.update();
+        renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+</script>
+</body>
+</html>
