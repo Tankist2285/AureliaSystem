@@ -1,3 +1,5 @@
+<link rel="manifest" href="manifest.json"
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -588,11 +590,11 @@
                     <input type="range" id="in-pl-ecc" min="0" max="0.8" step="0.0001" value="${p.eccentricity}">
                 </div>
                 <div class="control-group">
-                    <div class="control-label"><span>Inclination:</span><span id="val-pl-inc">${p.inclination}°</span></div>
+                    <div class="control-label"><span>Inclination:</span><span id="val-pl-inc">${p.inclination}Â°</span></div>
                     <input type="range" id="in-pl-inc" min="-90" max="90" step="0.1" value="${p.inclination}">
                 </div>
                 <div class="control-group">
-                    <div class="control-label"><span>Periapsis:</span><span id="val-pl-per">${p.periapsis}°</span></div>
+                    <div class="control-label"><span>Periapsis:</span><span id="val-pl-per">${p.periapsis}Â°</span></div>
                     <input type="range" id="in-pl-per" min="0" max="360" step="0.01" value="${p.periapsis}">
                 </div>
             `;
@@ -648,12 +650,12 @@
             });
             document.getElementById('in-pl-inc').addEventListener('input', (e) => {
                 p.inclination = parseFloat(e.target.value);
-                document.getElementById('val-pl-inc').innerText = p.inclination + '°';
+                document.getElementById('val-pl-inc').innerText = p.inclination + 'Â°';
                 updatePlanetOrbitGeometry(p.index);
             });
             document.getElementById('in-pl-per').addEventListener('input', (e) => {
                 p.periapsis = parseFloat(e.target.value);
-                document.getElementById('val-pl-per').innerText = p.periapsis + '°';
+                document.getElementById('val-pl-per').innerText = p.periapsis + 'Â°';
                 updatePlanetOrbitGeometry(p.index);
             });
         } else if (selectedObject.type === 'moon') {
