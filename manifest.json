@@ -9,5 +9,16 @@
   "start_url": "/",
   "theme_color": "#ffffff",
   "id": "Aurelia-Space-Systems",
-  "description": "Aurelia system simulator where you can change the diameter, mass, distance, and more!"
+  "description": "Aurelia system simulator where you can change the diameter, mass, distance, and more!",
+  "icons": [
+    {
+      "scr": "192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "scr": "512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
 }
